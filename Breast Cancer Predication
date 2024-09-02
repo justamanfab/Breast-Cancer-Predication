@@ -1,0 +1,108 @@
+#%% md
+## Breast Cancer Prediction
+#%%
+# Importing libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+#%%
+# Reading csv file
+df = pd.read_csv("breast-cancer.csv")
+
+# Display the first 5 rows
+df.head(5)
+
+#%%
+# Return the total null and non-null values in rows and columns
+df.info()
+
+#%%
+# Return all the columns with null count (total null values)
+df.isna().sum()
+
+#%%
+# Remove columns with null values
+df = df.dropna(axis=1)
+
+#%%
+# Shape of dataset after removing the column
+df.shape
+
+#%%
+# Statistical summary of the dataset
+df.describe()
+
+#%%
+# Get the count of Malignant (M) and Benign (B) cells
+df['diagnosis'].value_counts()
+
+#%%
+# Visualize diagnosis counts
+sns.countplot(df['diagnosis'], label="count")
+#%%
+# LabelEncode converts string into integer value i.e. 0 or 1
+label_encoder_Y = LabelEncoder()
+df['diagnosis'] = label_encoder_Y.fit_transform(df['diagnosis'])
+
+
+#%%
+# Visualize pair plot
+sns.pairplot(df.iloc[:, 1:5], hue="diagnosis")
+
+#%%
+# Get the correlation
+correlation_matrix = df.iloc[:, 1:32].corr()
+
+#%%
+# Visualize the correlation
+plt.figure(figsize=(10, 10))
+# sns.heatmap(correlation_matrix, annot=True, fmt=".2f", cmap='coolwarm')
+sns.heatmap(df.iloc[:, 1 : 32].corr(), annot= True, fmt= ".0%", cmap='coolwarm')
+#%%
+# Split the dataset into dependent (X = Mean etc value after removing header) and independent (Y = Diagnosis) datasets
+X = df.iloc[:, 2:32].values
+Y = df.iloc[:, 1].values
+
+#%%
+# Dividing the data into 80:20 ratio where 80 will be used for prediction and 20 is used for testing
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.20, random_state=0)
+
+#%%
+# Feature Scaling
+sc = StandardScaler()
+X_train_scaled = sc.fit_transform(X_train)
+X_test_scaled = sc.transform(X_test)
+
+#%%
+# Train Machine Learning Models (Logistic Regression, Random Forest, Decision Tree)
+models = {}
+
+# Logistic Regression
+models['Logistic Regression'] = LogisticRegression(max_iter=1000)
+models['Logistic Regression'].fit(X_train_scaled, y_train)
+
+# Random Forest Classifier
+models['Random Forest'] = RandomForestClassifier(n_estimators=100, random_state=42)
+models['Random Forest'].fit(X_train_scaled, y_train)
+
+# Decision Tree Classifier
+models['Decision Tree'] = DecisionTreeClassifier(random_state=0, criterion='entropy')
+models['Decision Tree'].fit(X_train_scaled, y_train)
+
+# Model Evaluation
+for model_name, model in models.items():
+    # Make predictions on the test set
+    y_pred = model.predict(X_test_scaled)
+
+    # Print model evaluation metrics
+    print(f"\nEvaluation Results for: {model_name}")
+    print(f"Accuracy: {accuracy_score(y_test, y_pred) * 100:.2f}%")
+    print(f"Classification Report:\n{classification_report(y_test, y_pred)}")
+    print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
